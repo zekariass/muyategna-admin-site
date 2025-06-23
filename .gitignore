@@ -1,0 +1,34 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# === Django ===
+*.sqlite3                 # Local SQLite database
+db.sqlite3                # Explicit DB name
+*.log                     # Log files
+*.pot
+*.pyc
+*.mo
+
+# Django migrations (optional — keep if you want to ignore compiled migration files)
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# === Environment ===
+.env                      # Environment variable file (e.g., secrets, keys)
+.env.*                   # e.g. .env.dev, .env.local
+
+# === VS Code ===
+.vscode/
+*.code-workspace
+
+# === Virtual Environments ===
+muyategnavenv/
+.venv/
+
+# === OS Files ===
+.DS_Store
+Thumbs.db

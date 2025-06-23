@@ -1,0 +1,1 @@
+python manage.py inspectdb --exclude=bg,county,cousub,place,state,tabblock,tract,zcta5,spatial_ref_sys > admin_interface_app/models.py

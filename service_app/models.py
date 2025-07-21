@@ -70,13 +70,22 @@ class ServiceTranslation(models.Model):
         return self.name
 
 
+from django.db import models
+
+class PriceModelEnum(models.TextChoices):
+    FIXED = 'FIXED', 'Fixed'
+    HOURLY = 'HOURLY', 'Hourly'
+    TIERED = 'TIERED', 'Tiered'
+    QUOTE = 'QUOTE', 'Quote'
+    PER_UNIT = 'PER_UNIT', 'Per Unit'
+
 
 class ServiceCountryAvailability(models.Model):
     id = models.BigAutoField(primary_key=True)
     service = models.ForeignKey(Service, models.DO_NOTHING)
     country = models.ForeignKey(Country, models.DO_NOTHING, related_name='available_services')
     is_active = models.BooleanField(blank=True, null=True)
-    price_model = models.TextField()  # This field type is a guess.
+    price_model = models.TextField(choices=PriceModelEnum.choices, default=PriceModelEnum.FIXED)  
     base_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)

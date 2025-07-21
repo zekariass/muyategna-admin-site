@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',  # For GIS support
     'admin_interface_app',
     'job_request_app',
     'service_app',
@@ -45,7 +46,10 @@ INSTALLED_APPS = [
     'common_app',
     'location_app',
     'system_app',
+    'billing_app',
+    'quartz_app',
     "smart_selects",
+
 ]
 
 MIDDLEWARE = [
@@ -87,12 +91,15 @@ DATABASES = {
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis', #'django.db.backends.postgresql',
         'NAME': 'muyategna',
         'USER': 'muyategna',
         'PASSWORD': 'Zakinfo@23',
         'HOST': 'localhost', # Or your PostgreSQL host
         'PORT': '5433',      # Or your PostgreSQL port
+        'OPTIONS': {
+            'options': '-c search_path=quartz,public'
+        },
     }
 }
 
@@ -150,3 +157,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal311.dll'

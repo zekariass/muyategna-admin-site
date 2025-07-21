@@ -2,11 +2,17 @@ from django.db import models
 from user_app.models import UserProfile
 
 
+class ConfigDataTypes(models.TextChoices):
+    INTEGER = 'INTEGER', 'Integer'
+    DOUBLE = 'DOUBLE', 'Double'
+    BOOLEAN = 'BOOLEAN', 'Boolean'
+    STRING = 'STRING', 'String'
+
 class SystemConfig(models.Model):
     config_id = models.BigAutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=100)
     value = models.TextField()
-    type = models.TextField()  # This field type is a guess.
+    type = models.TextField(choices=ConfigDataTypes)
     created_by = models.ForeignKey(UserProfile, models.DO_NOTHING, db_column='created_by')
     updated_by = models.ForeignKey(UserProfile, models.DO_NOTHING, db_column='updated_by', related_name='systemconfig_updated_by_set')
     created_at = models.DateTimeField(auto_now_add=True, editable=False)

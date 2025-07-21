@@ -32,7 +32,7 @@ class ServiceProvider(models.Model):
     service_provider_type = models.TextField(choices=ServiceProviderType, default=ServiceProviderType.SOLE_TRADER)
     business_address = models.ForeignKey(Address, models.DO_NOTHING, blank=True, null=True)
     num_employees = models.IntegerField(blank=True, null=True)
-    max_travel_distance_in_km = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    max_travel_distance_in_km = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     portfolio_url = models.TextField(blank=True, null=True)
     portfolio_type = models.TextField(choices=PortfolioType, default=PortfolioType.WEBSITE)  
     business_logo_url = models.TextField(blank=True, null=True)
@@ -126,7 +126,7 @@ class ServiceProviderServices(models.Model):
     id = models.BigAutoField(primary_key=True)
     service = models.ForeignKey(Service, models.DO_NOTHING)
     provider = models.ForeignKey(ServiceProvider, models.DO_NOTHING)
-    is_active = models.BooleanField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
     linked_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
 
@@ -136,6 +136,7 @@ class ServiceProviderServices(models.Model):
     class Meta:
         managed = False
         db_table = 'service_provider_services'
+        unique_together = (('service', 'provider'),)
 
 
 class ServiceProviderTaxInfo(models.Model):

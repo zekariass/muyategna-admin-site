@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from .forms import CountryForm, SubCityOrDivisionForm, CityForm, RegionForm, AddressForm
 
 
 # Register your models here.
@@ -16,23 +17,27 @@ admin.site.register(CountryTranslation)
 
 @admin.register(Country)
 class CountryAdmin(admin.ModelAdmin):
+    form = CountryForm
     list_display = ("country_id", "name", "iso_code2", "iso_code3", "iso_code_numeric", "continent", 
-                    "description", "created_at", "updated_at", "is_global")
+                    "description", "created_at", "updated_at", "is_global", "taxpayer_id_type", "currency")
 
 
 @admin.register(SubCityOrDivision)
 class SubCityOrDivisionAdmin(admin.ModelAdmin):
+    form = SubCityOrDivisionForm
     list_display = ("sub_city_or_division_id", "city", "name", "description", "created_at", "updated_at")
 
     
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
+    form = AddressForm
     list_display = ("address_id", "country", "region", "city", "sub_city_or_division", "locality", 
                     "street", "landmark", "postal_code", "geo_point","full_address")
     
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
+    form = CityForm
     list_display = ("city_id", "region", "name", "description", "created_at", "updated_at")
     search_fields = ("region", "name")
     list_filter = ("region",)
@@ -47,5 +52,6 @@ class CityTranslationAdmin(admin.ModelAdmin):
 
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
+    form = RegionForm
     list_display = ("region_id", "country", "name", "description", "created_at", "updated_at" )
 

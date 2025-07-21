@@ -1,5 +1,6 @@
 from django.db import models
 from common_app.models import Language
+from location_app.models import Country
 
 
 class UserProfile(models.Model):
@@ -10,7 +11,7 @@ class UserProfile(models.Model):
     last_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     email = models.CharField(unique=True, max_length=100, blank=True, null=True)
-    address_id = models.BigIntegerField(blank=True, null=True)
+    country = models.ForeignKey(Country, blank=True, null=True, on_delete=models.DO_NOTHING, related_name='user_profiles')
     profile_picture_url = models.TextField(blank=True, null=True)
     default_language = models.ForeignKey(Language, models.DO_NOTHING)
     last_login = models.DateTimeField(blank=True, null=True)
@@ -24,6 +25,6 @@ class UserProfile(models.Model):
         db_table = 'user_profile'
 
     def __str__(self):
-        if self.address_id:
-            return f"{self.email} ({self.address_id})"
+        if self.country:
+            return f"{self.email} ({self.country.country_id})"
         return self.email

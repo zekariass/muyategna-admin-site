@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.gis.db import models as gis_models
 from common_app.models import Language
 
 
@@ -12,7 +13,10 @@ class Country(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    is_global = models.BooleanField(unique=True)
+    is_global = models.BooleanField()
+    taxpayer_id_type = models.CharField(max_length=50, blank=True, null=True)
+    currency = models.CharField(max_length=3, blank=True, null=True)
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
 
     class Meta:
         managed = False
@@ -29,6 +33,7 @@ class CountryTranslation(models.Model):
     name = models.CharField(max_length=100)
     continent = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
 
@@ -52,6 +57,8 @@ class Region(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
+
 
     class Meta:
         managed = False
@@ -71,6 +78,7 @@ class City(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(editable=False, db_default=models.functions.Now())
     updated_at = models.DateTimeField(editable=False, db_default=models.functions.Now())
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
 
     class Meta:
         managed = False
@@ -135,6 +143,7 @@ class SubCityOrDivision(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
 
     class Meta:
         managed = False
@@ -179,7 +188,7 @@ class Address(models.Model):
     street = models.CharField(max_length=255, blank=True, null=True)
     landmark = models.CharField(max_length=255, blank=True, null=True)
     postal_code = models.CharField(max_length=20, blank=True, null=True)
-    geo_point = models.TextField(blank=True, null=True)  # This field type is a guess.
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
     full_address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 
@@ -188,4 +197,4 @@ class Address(models.Model):
         db_table = 'address'
 
     def __str__(self):
-        return self.full_address
+        return self.sub_city_or_division.name if self.sub_city_or_division is not None else self.city.name

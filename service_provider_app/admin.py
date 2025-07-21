@@ -17,8 +17,8 @@ class ServiceEmployeeRoleAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceProvider)
 class ServiceProviderAdmin(admin.ModelAdmin):
-    list_display = ("id", "business_name", "country", "verification_status", "is_verified", 'is_active', "is_blocked", "registered_at", "updated_at")
-    search_fields = ("business_name", "business_description")
+    list_display = ("id", "business_name", "country", 'business_address', "verification_status", "is_verified", 'is_active', "is_blocked", "registered_at", "updated_at")
+    search_fields = ("id", "business_name", "business_description")
     list_filter = ("verification_status", "country")
 
 

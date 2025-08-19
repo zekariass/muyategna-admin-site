@@ -3,15 +3,8 @@ from .models import *
 from .forms import CountryForm, SubCityOrDivisionForm, CityForm, RegionForm, AddressForm
 
 
-# Register your models here.
-# admin.site.register(Address)
-# admin.site.register(SubCityOrDivision)
 admin.site.register(SubCityOrDivisionTranslation)
-# admin.site.register(City)
-# admin.site.register(CityTranslation)
-# admin.site.register(Region)
 admin.site.register(RegionTranslation)
-# admin.site.register(Country)
 admin.site.register(CountryTranslation)
 
 
@@ -33,7 +26,7 @@ class SubCityOrDivisionAdmin(admin.ModelAdmin):
 class AddressAdmin(admin.ModelAdmin):
     form = AddressForm
     list_display = ("address_id", "country", "region", "city", "sub_city_or_division", "locality", 
-                    "street", "landmark", "postal_code", "geo_point","full_address")
+                    "street", "landmark", "postal_code", "geo_point", "h3_index_res7", "h3_index_res8", "h3_index_res9", "full_address")
     
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):

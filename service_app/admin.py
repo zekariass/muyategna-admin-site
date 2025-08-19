@@ -13,7 +13,7 @@ class ServiceCategoryTranslationAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ("id", "service_category", "name", "description", "created_at", "updated_at")
+    list_display = ("id", "service_category", "name", "delivery_mode", "description", "created_at", "updated_at")
 
 @admin.register(ServiceTranslation)
 class ServiceTranslationAdmin(admin.ModelAdmin):

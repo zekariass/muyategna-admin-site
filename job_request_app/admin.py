@@ -59,8 +59,7 @@ class JobRequestAdmin(admin.ModelAdmin):
         'status', 
         'budget', 
         'start_window',
-        # 'question_answers', 
-        # 'extra_data',
+        'delivery_mode',
         'created_at', 
         'updated_at'
     )
@@ -142,6 +141,7 @@ class JobLeadClaimAdmin(admin.ModelAdmin):
         'job_lead',
         'provider',
         'status',
+        'requote_requested',
         'claimed_at',
         'created_at',
         'updated_at',
@@ -182,4 +182,34 @@ class JobQuoteAdmin(admin.ModelAdmin):
                 'updated_at',
             )
         }),
+    )
+
+
+@admin.register(InviteForQuote)
+class InviteForQuoteAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'job_request',
+        'provider',
+        'viewed',
+        'invited_at',
+        'viewed_at',
+        'accepted_at',
+        'updated_at',
+    )
+    list_filter = (
+        'viewed',
+        'invited_at',
+        'accepted_at',
+    )
+    search_fields = (
+        'job_request__id',
+        'provider__id',
+    )
+    ordering = ('-invited_at',)
+    readonly_fields = (
+        'invited_at',
+        'viewed_at',
+        'accepted_at',
+        'updated_at',
     )

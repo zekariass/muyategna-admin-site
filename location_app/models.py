@@ -188,7 +188,10 @@ class Address(models.Model):
     street = models.CharField(max_length=255, blank=True, null=True)
     landmark = models.CharField(max_length=255, blank=True, null=True)
     postal_code = models.CharField(max_length=20, blank=True, null=True)
-    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)  # This field type is a guess.
+    geo_point = gis_models.PointField(geography=True, srid=4326, null=False)
+    h3_index_res7 = models.CharField(max_length=30, blank=False, null=False)  # H3 index at resolution 7
+    h3_index_res8 = models.CharField(max_length=30, blank=False, null=False)  # H3 index at resolution 8
+    h3_index_res9 = models.CharField(max_length=30, blank=False, null = False)  # H3 index at resolution 9  
     full_address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
 

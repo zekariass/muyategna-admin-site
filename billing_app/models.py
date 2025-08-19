@@ -4,6 +4,7 @@ from location_app.models import Country, Region
 from common_app.models import Language
 from user_app.models import UserProfile
 from service_provider_app.models import ServiceProvider, ServiceProviderTaxInfo
+from job_request_app.models import JobLeadClaim, JobRequest
 
 
 class CalculationMethod(models.TextChoices):
@@ -67,16 +68,36 @@ class DiscountUserType(models.TextChoices):
     ANY_USER = 'ANY_USER', 'Any User'
 
 
+class CreditSource(models.TextChoices):
+    PAYGO = 'PAYGO', 'Pay-as-you-go'
+    SUBSCRIPTION = 'SUBSCRIPTION', 'Subscription'
+    HYBRID = 'HYBRID', 'Hybrid'
+
+
+class HoldStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    RELEASED = 'RELEASED', 'Released'
+    CONVERTED = 'CONVERTED', 'Converted'
+    EXPIRED = 'EXPIRED', 'Expired'
+
+
 class AddOnPlan(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    service = models.ForeignKey(Service, models.DO_NOTHING)
-    country = models.ForeignKey(Country, models.DO_NOTHING)
-    price_amount = models.DecimalField(max_digits=15, decimal_places=4)
-    leads_included = models.IntegerField()
-    plan_order = models.IntegerField()
-    expire_on = models.DateTimeField(blank=True, null=True)
-    is_default = models.BooleanField()
-    is_active = models.BooleanField()
+    country = models.ForeignKey(
+        Country, 
+        on_delete=models.CASCADE,
+        db_column='country_id'
+    )
+    name = models.CharField(max_length=255, unique=True)
+    price_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=4
+    )
+    credits_included = models.IntegerField(default=0)
+    sort_order = models.IntegerField(default=0)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    extra_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     name = models.CharField(unique=True, max_length=100)
@@ -87,28 +108,60 @@ class AddOnPlan(models.Model):
     class Meta:
         managed = False
         db_table = 'add_on_plan'
-        unique_together = (('service', 'plan_order'),)
 
 
 class DiscountPlan(models.Model):
     id = models.BigAutoField(primary_key=True)
-    country = models.ForeignKey(Country, models.DO_NOTHING)
-    name = models.CharField(unique=True, max_length=255)
-    description = models.TextField(blank=True, null=True)
-    discount_calculation_method = models.TextField(choices=CalculationMethod, default=CalculationMethod.PERCENTAGE)  # This field type is a guess.
-    fixed_value = models.DecimalField(max_digits=15, decimal_places=4)
-    percentage_value = models.DecimalField(max_digits=15, decimal_places=4)
+    country = models.ForeignKey(
+        Country,
+        on_delete=models.CASCADE,
+        related_name='discount_plans'
+    )
+
+    name = models.CharField(
+        max_length=255,
+        unique=True
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    fixed_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=4
+    )
+
+    percentage_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=4
+    )
+
     starts_at = models.DateTimeField()
     expires_at = models.DateTimeField()
-    usage_limit = models.IntegerField()
-    per_user_limit = models.IntegerField()
-    total_use_count = models.IntegerField()
-    max_discount_value = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
-    is_active = models.BooleanField()
-    created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    updated_at = models.DateTimeField(auto_now=True, editable=False)
-    coupon_required = models.BooleanField()
-    applies_to = models.TextField(choices=DiscountUserType, default=DiscountUserType.ANY_USER)  # This field type is a guess.
+
+    usage_limit = models.IntegerField(default=0)
+    per_user_limit = models.IntegerField(default=0)
+    total_use_count = models.IntegerField(default=0)
+
+    max_discount_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=4,
+        blank=True,
+        null=True
+    )
+
+    is_active = models.BooleanField(default=True)
+    coupon_required = models.BooleanField(default=True)
+
+    # applies_to = models.CharField(
+    #     max_length=50,
+    #     choices=DiscountUserType.choices
+    # )
+
+    extra_data = models.JSONField(blank=True, null=True)
+
 
     def __str__(self):
         return f"{self.name} ({self.country})"
@@ -240,6 +293,7 @@ class PaymentMethod(models.Model):
     id = models.BigAutoField(primary_key=True)
     country = models.ForeignKey(Country, models.DO_NOTHING)
     name = models.CharField(max_length=100)
+    code = models.CharField(max_length=30, unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
 
@@ -457,7 +511,7 @@ class ServiceProviderSubscription(models.Model):
     extra_data = models.JSONField(blank=True, null=True)
     is_active = models.BooleanField()
     initial_credits = models.DecimalField(max_digits=10, decimal_places=2)
-    used_credits = models.DecimalField(max_digits=10, decimal_places=2)
+    balance = models.DecimalField(max_digits=10, decimal_places=2)
     auto_renew = models.BooleanField()
     started_at = models.DateTimeField(blank=True, null=True)
     end_date = models.DateTimeField(blank=True, null=True)
@@ -528,7 +582,64 @@ class ServiceCreditPlan(models.Model):
 
 
 
-class ServiceProviderCredit(models.Model):
+# class ServiceProviderCredit(models.Model):
+#     id = models.BigAutoField(primary_key=True)
+#     provider = models.OneToOneField(ServiceProvider, models.DO_NOTHING)
+#     balance = models.DecimalField(max_digits=15, decimal_places=4)
+#     auto_add_on_enabled = models.BooleanField()
+#     extra_data = models.JSONField(blank=True, null=True)
+#     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+#     updated_at = models.DateTimeField(auto_now=True, editable=False)
+#     last_used_at = models.DateTimeField(blank=True, null=True)
+
+#     class Meta:
+#         managed = False
+#         db_table = 'service_provider_credit'
+
+#     def __str__(self):
+#         return f"{self.provider.business_name} - Balance: {self.balance}"
+
+
+
+class ServiceCreditCost(models.Model):
+    service = models.OneToOneField(Service, models.DO_NOTHING)
+    payg_claim_cost_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
+    payg_acceptance_cost_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
+    subs_claim_cost_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
+    subs_acceptance_cost_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)
+
+    class Meta:
+        managed = False
+        db_table = 'service_credit_cost'
+
+    def __str__(self):
+        return f"{self.service.name} - PAYG Claim: {self.payg_claim_cost_per_lead}, Subscription Claim: {self.subs_claim_cost_per_lead}"
+    
+
+
+class CreditUsage(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    provider = models.ForeignKey(ServiceProvider, models.DO_NOTHING)
+    job_lead_claim = models.ForeignKey(JobLeadClaim, models.DO_NOTHING, blank=True, null=True)
+    used_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    credit_source = models.TextField(choices=CreditSource)
+    extra_data = models.JSONField(blank=True, null=True)
+    used_at = models.DateTimeField(auto_now_add=True, editable=False)
+    is_partial = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = 'credit_usage'
+
+    def __str__(self):
+        return f"{self.provider.business_name} - Used: {self.used_amount} ({self.credit_source})"
+
+
+
+class PayGoCredit(models.Model):
     id = models.BigAutoField(primary_key=True)
     provider = models.OneToOneField(ServiceProvider, models.DO_NOTHING)
     balance = models.DecimalField(max_digits=15, decimal_places=4)
@@ -540,24 +651,123 @@ class ServiceProviderCredit(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'service_provider_credit'
+        db_table = 'pay_go_credit'
 
     def __str__(self):
-        return f"{self.provider.business_name} - Balance: {self.balance}"
+        return f"{self.provider.business_name} - Balance: {self.balance}, Auto Add-On Enabled: {self.auto_add_on_enabled}"
 
 
 
-class ServiceCreditCost(models.Model):
-    service = models.OneToOneField(Service, models.DO_NOTHING)
+# class ServiceProviderWallet(models.Model):
+#     id = models.BigAutoField(primary_key=True)
+#     provider = models.OneToOneField(ServiceProvider, models.DO_NOTHING)
+#     paygo_credit = models.ForeignKey(PayGoCredit, models.DO_NOTHING, blank=True, null=True)
+#     subscription = models.ForeignKey(ServiceProviderSubscription, models.DO_NOTHING, blank=True, null=True)
+#     total_credit = models.DecimalField(max_digits=10, decimal_places=2)
+#     total_hold_credit = models.DecimalField(max_digits=10, decimal_places=2)
+#     available_credit = models.DecimalField(max_digits=10, decimal_places=2)
+#     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+#     updated_at = models.DateTimeField(auto_now=True, editable=False)
+
+#     class Meta:
+#         managed = False
+#         db_table = 'service_provider_wallet'
+
+#     def __str__(self):
+#         return f"{self.provider.business_name} - Total Credit: {self.total_credit}, Available Credit: {self.available_credit}"
+
+class ServiceProviderWallet(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    provider = models.OneToOneField(ServiceProvider, models.DO_NOTHING)
+    paygo_credit = models.ForeignKey(PayGoCredit, models.DO_NOTHING, blank=True, null=True)
+    subscription = models.ForeignKey(ServiceProviderSubscription, models.DO_NOTHING, blank=True, null=True)
+    total_credit = models.DecimalField(max_digits=10, decimal_places=2)
+    total_hold_credit = models.DecimalField(max_digits=10, decimal_places=2)
+    available_credit = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True)
-    payg_credits_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
-    subs_credits_per_lead = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         managed = False
-        db_table = 'service_credit_cost'
+        db_table = 'service_provider_wallet'
 
     def __str__(self):
-        return f"{self.service.name} - PAYG: {self.payg_credits_per_lead}, SUBS: {self.subs_credits_per_lead}"
+        return f"{self.provider.business_name} - Total Credit: {self.total_credit}, Available Credit: {self.available_credit}"
+
+
+class HoldCredit(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    provider_wallet = models.ForeignKey(ServiceProviderWallet, models.DO_NOTHING, blank=True, null=True)
+    job_lead_claim = models.ForeignKey(JobLeadClaim, models.DO_NOTHING, blank=True, null=True)
+    hold_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    credit_source = models.TextField(choices=CreditSource)
+    status = models.TextField(choices=HoldStatus, default=HoldStatus.ACTIVE)
+    hold_at = models.DateTimeField(auto_now_add=True, editable=False)
+    released_at = models.DateTimeField(blank=True, null=True)
+    converted_at = models.DateTimeField(blank=True, null=True)
+    expired_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'hold_credit'
+
+    def __str__(self):
+        return f"{self.provider_wallet.provider.business_name} - Hold: {self.hold_amount} ({self.status})"
     
+
+
+class PlatformBankInformation(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    bank_name = models.CharField(max_length=150)
+    bank_account_number = models.CharField(max_length=50)
+    bank_sort_code = models.CharField(max_length=30, blank=True, null=True)
+    swift_code = models.CharField(max_length=20, blank=True, null=True)
+    iban = models.CharField(max_length=50, blank=True, null=True)
+    branch_name = models.CharField(max_length=100, blank=True, null=True)
+    account_holder_name = models.CharField(max_length=100)
+    country = models.ForeignKey(Country, models.DO_NOTHING)
+    currency = models.CharField(max_length=3)
+    is_active = models.BooleanField()
+    extra_data = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'platform_bank_information'
+        unique_together = (('bank_account_number', 'currency', 'country'),)
+    
+    def __str__(self):
+        return f"{self.bank_name} - {self.account_holder_name} ({self.country}) - {self.currency}"
+
+
+class BankTransferStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    FAILED = "FAILED", "Failed"
+    CANCELLED = "CANCELLED", "Cancelled"
+    VERIFIED = "VERIFIED", "Verified"
+
+class BankTransferTransaction(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    transaction = models.ForeignKey(Transaction, models.DO_NOTHING)
+    payee_bank_account = models.ForeignKey(PlatformBankInformation, models.DO_NOTHING, blank=True, null=True)
+    payer_full_name = models.CharField(max_length=100)
+    payer_bank_name = models.CharField(max_length=100, blank=True, null=True)
+    payer_bank_branch_name = models.CharField(max_length=100, blank=True, null=True)
+    payer_bank_account_number = models.CharField(max_length=50, blank=True, null=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3)
+    bank_reference_number = models.CharField(unique=True, max_length=50, blank=True, null=True)
+    proof_of_payment_url = models.TextField(blank=True, null=True)
+    status = models.CharField(choices=BankTransferStatus.choices)
+    extra_data = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    verified_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'bank_transfer_transaction'
+
+    def __str__(self):
+        return f"Bank Transfer #{self.id} - {self.status} - {self.amount} {self.currency}"

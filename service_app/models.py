@@ -3,6 +3,10 @@ from location_app.models import Country
 from common_app.models import Language
 # ===================== SERVICE RELATED MODELS =====================
 
+class DeliveryMode(models.TextChoices):
+    ONSITE = 'ONSITE', 'Onsite'
+    REMOTE = 'REMOTE', 'Remote'
+    BOTH = 'BOTH', 'Both'
 
 class ServiceCategory(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -42,6 +46,9 @@ class Service(models.Model):
     service_category = models.ForeignKey('ServiceCategory', models.DO_NOTHING)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    delivery_mode = models.CharField(
+        max_length=20, choices=DeliveryMode.choices, default=DeliveryMode.ONSITE
+    )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
 

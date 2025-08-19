@@ -9,7 +9,7 @@ class Language(models.Model):
     is_default = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    is_global = models.BooleanField(unique=True)
+    is_global = models.BooleanField()
     native_name = models.CharField(max_length=255, blank=True, null=True)
     direction = models.CharField(max_length=3, blank=True, null=True)
     flag_emoji = models.CharField(max_length=10, blank=True, null=True)

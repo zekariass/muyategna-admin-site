@@ -4,16 +4,66 @@ from .models import *
 
 @admin.register(AddOnPlan)
 class AddOnPlanAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'service', 'country', 'price_amount', 'is_active', 'is_default', 'plan_order')
-    search_fields = ('name', 'service__name', 'country__name')
-    list_filter = ('is_active', 'is_default', 'country', 'service')
+    list_display = (
+        'id',
+        'name',
+        'country',
+        'price_amount',
+        'credits_included',
+        'sort_order',
+        'expires_at',
+        'is_default',
+        'is_active',
+        'created_at',
+        'updated_at',
+    )
+
+    list_filter = (
+        'country',
+        'is_active',
+        'is_default',
+    )
+
+    search_fields = (
+        'name',
+        'country__name',
+    )
+
+    ordering = ('sort_order', 'name')
+
+    readonly_fields = (
+        'created_at',
+        'updated_at',
+    )
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'country',
+                'name',
+                'price_amount',
+                'credits_included',
+                'sort_order',
+                'expires_at',
+                'is_default',
+                'is_active',
+                'extra_data',
+            )
+        }),
+        ('Timestamps', {
+            'fields': (
+                'created_at',
+                'updated_at',
+            )
+        }),
+    )
 
 
 @admin.register(DiscountPlan)
 class DiscountPlanAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'country', 'starts_at', 'expires_at', 'is_active', 'coupon_required')
-    search_fields = ('name', 'description', 'country__name')
-    list_filter = ('is_active', 'coupon_required', 'country')
+    list_display = ('id', 'name', 'country', 'is_active', 'starts_at', 'expires_at')
+    list_filter = ('country', 'is_active')
+    search_fields = ('name',)
 
 
 @admin.register(AddOnPlanDiscountEligibility)
@@ -60,8 +110,8 @@ class DiscountPlanTranslationAdmin(admin.ModelAdmin):
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'country')
-    search_fields = ('name',)
+    list_display = ('id', 'name', 'country', 'code')
+    search_fields = ('name', 'code')
     list_filter = ('country',)
 
 
@@ -164,7 +214,7 @@ class ServiceProviderSubscriptionAdmin(admin.ModelAdmin):
         'subscription_plan',
         'is_active',
         'initial_credits',
-        'used_credits',
+        'balance',
         'auto_renew',
         'renewal_status',
         'started_at',
@@ -222,21 +272,23 @@ class ServiceCreditPlanAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
 
-@admin.register(ServiceProviderCredit)
-class ServiceProviderCreditAdmin(admin.ModelAdmin):
-    list_display = ('provider', 'balance', 'auto_add_on_enabled', 'last_used_at', 'created_at', 'updated_at')
-    list_filter = ('auto_add_on_enabled',)
-    search_fields = ('provider__business_name',)
-    readonly_fields = ('created_at', 'updated_at', 'last_used_at')
-    ordering = ('-created_at',)
+# @admin.register(ServiceProviderCredit)
+# class ServiceProviderCreditAdmin(admin.ModelAdmin):
+#     list_display = ('provider', 'balance', 'auto_add_on_enabled', 'last_used_at', 'created_at', 'updated_at')
+#     list_filter = ('auto_add_on_enabled',)
+#     search_fields = ('provider__business_name',)
+#     readonly_fields = ('created_at', 'updated_at', 'last_used_at')
+#     ordering = ('-created_at',)
 
 
 @admin.register(ServiceCreditCost)
 class ServiceCreditCostAdmin(admin.ModelAdmin):
     list_display = (
         'service',
-        'payg_credits_per_lead',
-        'subs_credits_per_lead',
+        'payg_claim_cost_per_lead',
+        'payg_acceptance_cost_per_lead',
+        'subs_claim_cost_per_lead',
+        'subs_acceptance_cost_per_lead',
         'created_at',
         'updated_at',
     )
@@ -248,3 +300,188 @@ class ServiceCreditCostAdmin(admin.ModelAdmin):
         'updated_at',
     )
     ordering = ('-created_at',)
+
+
+
+@admin.register(CreditUsage)
+class CreditUsageAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'provider',
+        'used_amount',
+        'credit_source',
+        'used_at',
+        'is_partial',
+    )
+    list_filter = ('credit_source', 'used_at', 'is_partial')
+    search_fields = ('provider__business_name',)
+    readonly_fields = ('used_at',)
+    ordering = ('-used_at',)
+
+
+@admin.register(PayGoCredit)
+class PayGoCreditAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'provider',
+        'balance',
+        'auto_add_on_enabled',
+        'last_used_at',
+        'created_at',
+        'updated_at',
+    )
+    list_filter = ('auto_add_on_enabled',)
+    search_fields = ('provider__business_name',)
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(ServiceProviderWallet)
+class ServiceProviderWalletAdmin(admin.ModelAdmin):
+    list_display = (
+        'provider_name',
+        'total_credit',
+        'available_credit',
+        'total_hold_credit',
+        'created_at',
+        'updated_at',
+    )
+    list_filter = (
+        'created_at',
+        'updated_at',
+        'subscription',
+        'paygo_credit',
+    )
+    search_fields = (
+        'provider__business_name',
+        'provider__id',
+    )
+    readonly_fields = (
+        'created_at',
+        'updated_at',
+    )
+
+    def provider_name(self, obj):
+        return obj.provider.business_name
+    provider_name.short_description = 'Provider'
+
+
+
+@admin.register(HoldCredit)
+class HoldCreditAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'provider_wallet',
+        'hold_amount',
+        'credit_source',
+        'status',
+        'hold_at',
+        'released_at',
+        'converted_at',
+        'expired_at',
+    )
+    list_filter = ('credit_source', 'status', 'hold_at')
+    search_fields = ('provider_wallet__provider__business_name',)
+    readonly_fields = ('hold_at',)
+    ordering = ('-hold_at',)
+
+
+
+
+from django.contrib import admin
+from .models import PlatformBankInformation, BankTransferTransaction
+
+
+@admin.register(PlatformBankInformation)
+class PlatformBankInformationAdmin(admin.ModelAdmin):
+    list_display = (
+        "bank_name",
+        "account_holder_name",
+        "bank_account_number",
+        "currency",
+        "country",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("is_active", "currency", "country")
+    search_fields = (
+        "bank_name",
+        "account_holder_name",
+        "bank_account_number",
+        "swift_code",
+        "iban",
+    )
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {
+            "fields": (
+                "bank_name",
+                "bank_account_number",
+                "account_holder_name",
+                "currency",
+                "country",
+                "is_active",
+            )
+        }),
+        ("Optional Details", {
+            "fields": (
+                "bank_sort_code",
+                "swift_code",
+                "iban",
+                "branch_name",
+            ),
+            "classes": ("collapse",),  # collapsible in admin UI
+        }),
+        ("Meta", {
+            "fields": ("extra_data", "created_at", "updated_at"),
+        }),
+    )
+
+
+@admin.register(BankTransferTransaction)
+class BankTransferTransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "transaction",
+        "payee_bank_account",
+        "payer_full_name",
+        "amount",
+        "currency",
+        "status",
+        "bank_reference_number",
+        "created_at",
+        "verified_at",
+    )
+    list_filter = ("status", "currency", "created_at", "verified_at")
+    search_fields = (
+        "payer_full_name",
+        "payer_bank_name",
+        "payer_bank_account_number",
+        "bank_reference_number",
+    )
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at", "verified_at")
+    fieldsets = (
+        (None, {
+            "fields": (
+                "transaction",
+                "payee_bank_account",
+                "payer_full_name",
+                "payer_bank_name",
+                "payer_bank_branch_name",
+                "payer_bank_account_number",
+                "amount",
+                "currency",
+                "status",
+                "bank_reference_number",
+                "proof_of_payment_url",
+            )
+        }),
+        ("Extra Data", {
+            "fields": ("extra_data",),
+            "classes": ("collapse",),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at", "verified_at"),
+        }),
+    )

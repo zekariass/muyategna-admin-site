@@ -47,7 +47,9 @@ INSTALLED_APPS = [
     'location_app',
     'system_app',
     'billing_app',
+    'notification_app',
     'quartz_app',
+
     "smart_selects",
 
 ]
